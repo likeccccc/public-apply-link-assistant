@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "公开投递链接助手",
+  "description": "网页浮卡一键搜索；点击扩展图标在小弹窗中配置 API 与搜索选项。",
+  "version": "1.5.0",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "permissions"
+  ],
+  "host_permissions": [
+    "https://givemeoc.com/*",
+    "https://www.givemeoc.com/*",
+    "https://maas.qianwenaiapi.com/*",
+    "https://api.openai.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "投递链接助手设置",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [{
+    "matches": ["https://givemeoc.com/*", "https://www.givemeoc.com/*"],
+    "js": ["widget.js"],
+    "run_at": "document_idle"
+  }]
+}

@@ -1,0 +1,10 @@
+# Never publish local credentials, extension packages, or browser profiles.
+*.pem
+*.key
+*.crx
+*.zip
+.env
+.env.*
+node_modules/
+work/
+*profile*/
