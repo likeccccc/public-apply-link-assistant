@@ -4,14 +4,11 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const path = require("node:path");
 
-const source = fs.readFileSync(path.join(__dirname, "../extension/background.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../extension/search.js"), "utf8");
 const config = { base: "https://maas.qianwenaiapi.com/compatible-mode/v1", model: "deepseek-v3.2-exp", key: "test-secret-key-123" };
 
 function contextFor(fetch) {
-  const context = vm.createContext({
-    fetch, URL,
-    chrome: { runtime: { onMessage: { addListener() {} } } },
-  });
+  const context = vm.createContext({ fetch, URL });
   vm.runInContext(source, context);
   return context;
 }

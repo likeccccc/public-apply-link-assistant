@@ -66,11 +66,13 @@ async function initialize() {
     result.textContent = "正在用真实投递入口搜索流程测试（不走缓存）……";
     result.className = "status";
     try {
-      const reply = await chrome.runtime.sendMessage({ type: "test-model", config: {
+      const url = new URL($("base").value.trim());
+      if (!await chrome.permissions.contains({ origins: [`${url.origin}/*`] })) {
+        throw new Error("API 域名尚未授权，请先点击上方“检查并授权 API 域名”。");
+      }
+      const data = await testModel({
         base: $("base").value, model: $("model").value, key: $("key").value,
-      } });
-      if (!reply?.ok) throw new Error(reply?.error || "扩展后台没有返回测试结果。");
-      const data = reply.data;
+      });
       result.textContent = `${data.message} 本次消耗：输入 ${data.inputTokens}、输出 ${data.outputTokens} Token。`;
       result.className = `status ${data.supported ? "success" : "error"}`;
     } catch (error) {
