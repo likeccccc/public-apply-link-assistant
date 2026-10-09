@@ -4,30 +4,30 @@ const DEFAULT_BASE = "https://maas.qianwenaiapi.com/compatible-mode/v1";
 const DEFAULT_MODEL = "deepseek-v4-flash";
 const DAY = 24 * 60 * 60 * 1000;
 
-chrome.action.onClicked.addListener(async () => {
+async function openPinnedSettings() {
   const { settingsWindowId } = await chrome.storage.session.get({ settingsWindowId: null });
   if (Number.isInteger(settingsWindowId)) {
     try {
-      const existing = await chrome.windows.get(settingsWindowId, { populate: true });
-      if (existing.type === "popup" && existing.tabs?.some((tab) => tab.url === chrome.runtime.getURL("popup.html"))) {
-        await chrome.windows.remove(settingsWindowId);
-        await chrome.storage.session.remove("settingsWindowId");
-        return;
+      const existing = await chrome.windows.get(settingsWindowId);
+      if (existing.type === "popup") {
+        await chrome.windows.update(settingsWindowId, { focused: true });
+        return { focused: true };
       }
     } catch {
-      // The user may have closed the window with its title-bar button.
+      // A manually closed window can leave a stale ID until onRemoved runs.
     }
     await chrome.storage.session.remove("settingsWindowId");
   }
   const settingsWindow = await chrome.windows.create({
-    url: chrome.runtime.getURL("popup.html"),
+    url: chrome.runtime.getURL("popup.html?pinned=1"),
     type: "popup",
-    width: 420,
-    height: 720,
+    width: 430,
+    height: 740,
     focused: true,
   });
   if (Number.isInteger(settingsWindow?.id)) await chrome.storage.session.set({ settingsWindowId: settingsWindow.id });
-});
+  return { created: true };
+}
 
 chrome.windows.onRemoved.addListener(async (windowId) => {
   const { settingsWindowId } = await chrome.storage.session.get({ settingsWindowId: null });
@@ -71,10 +71,11 @@ async function searchOne(company) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!["get-public-settings", "search-one", "save-position"].includes(message?.type)) return false;
+  if (!["get-public-settings", "search-one", "save-position", "open-pinned-settings"].includes(message?.type)) return false;
   (async () => {
     if (message.type === "get-public-settings") return await publicSettings();
     if (message.type === "search-one") return await searchOne(message.company);
+    if (message.type === "open-pinned-settings") return await openPinnedSettings();
     const x = Number(message.position?.x);
     const y = Number(message.position?.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error("悬浮按钮位置无效。");

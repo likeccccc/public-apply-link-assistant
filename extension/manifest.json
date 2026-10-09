@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "公开投递链接助手",
-  "description": "网页浮卡一键搜索；点击扩展图标打开可保持显示的设置小窗口。",
-  "version": "1.7.0",
+  "description": "网页浮卡一键搜索；工具栏设置弹窗可按需置顶。",
+  "version": "1.7.1",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",
@@ -22,7 +22,8 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "打开或关闭投递链接助手设置"
+    "default_title": "投递链接助手设置",
+    "default_popup": "popup.html"
   },
   "content_scripts": [{
     "matches": ["https://givemeoc.com/*", "https://www.givemeoc.com/*"],

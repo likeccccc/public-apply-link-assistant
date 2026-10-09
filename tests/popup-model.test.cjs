@@ -20,7 +20,7 @@ test("popup model test calls the shared search code without messaging the backgr
   const saved = { providerBase: "https://maas.qianwenaiapi.com/compatible-mode/v1", modelName: "deepseek-v4-pro", apiKey: "test-secret-key-123" };
   let fetchCount = 0;
   const context = vm.createContext({
-    URL, document: { getElementById: element },
+    URL, URLSearchParams, location: { search: "" }, document: { getElementById: element },
     chrome: {
       storage: { local: { get: async () => saved, set: async (values) => Object.assign(saved, values) }, session: { get: async () => ({ apiKey: "" }) } },
       permissions: { contains: async () => true, request: async () => true },
@@ -41,4 +41,13 @@ test("popup model test calls the shared search code without messaging the backgr
   assert.equal(fetchCount, 1);
   assert.match(element("testStatus").textContent, /已完成一次真实投递入口搜索流程/);
   assert.match(element("testStatus").className, /success/);
+  assert.equal(element("pinButton").textContent, "置顶");
+  let pinRequested = false;
+  context.chrome.runtime.sendMessage = async (message) => {
+    assert.equal(message.type, "open-pinned-settings");
+    pinRequested = true;
+    return { ok: true };
+  };
+  await element("pinButton").listeners.click();
+  assert.equal(pinRequested, true);
 });

@@ -19,7 +19,15 @@ function save(values) {
 }
 
 async function initialize() {
-  $("closeWindow").addEventListener("click", () => window.close());
+  const isPinned = new URLSearchParams(location.search).get("pinned") === "1";
+  $("pinButton").textContent = isPinned ? "取消置顶" : "置顶";
+  $("pinButton").addEventListener("click", async () => {
+    if (isPinned) { window.close(); return; }
+    try {
+      const reply = await chrome.runtime.sendMessage({ type: "open-pinned-settings" });
+      if (!reply?.ok) throw new Error(reply?.error || "未能打开置顶窗口。");
+    } catch (error) { status(`置顶失败：${error.message}`, true); }
+  });
   try {
     const raw = await chrome.storage.local.get(["providerBase", "modelName", "apiKey", "searchScope", "linkPlacement", "linkBrowser", "draftBase", "draftModel", "draftKey"]);
     const saved = { ...defaults, ...raw };
