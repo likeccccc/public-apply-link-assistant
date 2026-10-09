@@ -63,7 +63,7 @@ async function initialize() {
     const button = $("testModel");
     const result = $("testStatus");
     button.disabled = true;
-    result.textContent = "正在测试模型的联网搜索能力……";
+    result.textContent = "正在用真实投递入口搜索流程测试（不走缓存）……";
     result.className = "status";
     try {
       const reply = await chrome.runtime.sendMessage({ type: "test-model", config: {
@@ -74,7 +74,7 @@ async function initialize() {
       result.textContent = `${data.message} 本次消耗：输入 ${data.inputTokens}、输出 ${data.outputTokens} Token。`;
       result.className = `status ${data.supported ? "success" : "error"}`;
     } catch (error) {
-      result.textContent = `测试失败：${error.message}`;
+      result.textContent = `真实搜索测试失败：${error.message}`;
       result.className = "status error";
     } finally { button.disabled = false; }
   });
