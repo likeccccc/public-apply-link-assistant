@@ -59,6 +59,25 @@ async function initialize() {
       status(granted ? "API 域名已授权。" : "没有获得 API 域名权限。", !granted);
     } catch (error) { status(`授权失败：${error.message}`, true); }
   });
+  $("testModel").addEventListener("click", async () => {
+    const button = $("testModel");
+    const result = $("testStatus");
+    button.disabled = true;
+    result.textContent = "正在测试模型的联网搜索能力……";
+    result.className = "status";
+    try {
+      const reply = await chrome.runtime.sendMessage({ type: "test-model", config: {
+        base: $("base").value, model: $("model").value, key: $("key").value,
+      } });
+      if (!reply?.ok) throw new Error(reply?.error || "扩展后台没有返回测试结果。");
+      const data = reply.data;
+      result.textContent = `${data.message} 本次消耗：输入 ${data.inputTokens}、输出 ${data.outputTokens} Token。`;
+      result.className = `status ${data.supported ? "success" : "error"}`;
+    } catch (error) {
+      result.textContent = `测试失败：${error.message}`;
+      result.className = "status error";
+    } finally { button.disabled = false; }
+  });
 }
 
 initialize();

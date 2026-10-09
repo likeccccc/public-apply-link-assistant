@@ -74,6 +74,39 @@ async function searchPublicLinks(config, companies) {
   return { results: sanitizeResults(parseResponseJson(getResponseText(payload)), companies, payload), usage: { inputTokens: Number(payload.usage?.input_tokens) || 0, outputTokens: Number(payload.usage?.output_tokens) || 0 } };
 }
 
+async function testModel(config) {
+  const base = String(config?.base || "").trim().replace(/\/+$/, "");
+  const model = String(config?.model || "").trim();
+  const key = String(config?.key || "").trim();
+  if (!isHttpUrl(base) || !model || key.length < 12) throw new Error("请先填写有效的 API Base URL、模型名称和 API Key。");
+  const isQwen = new URL(base).hostname.toLowerCase() === "maas.qianwenaiapi.com";
+  const body = {
+    model,
+    store: false,
+    tools: isQwen ? [{ type: "web_search" }] : [{ type: "web_search", search_context_size: "low" }],
+    tool_choice: "required",
+    input: "请联网搜索 OpenAI 官方网站，只用一句话回答。",
+  };
+  if (isQwen && /^deepseek-v4(?:\.1)?-(?:flash|pro)(?:-\d{4})?$/i.test(model)) body.reasoning = { effort: "none" };
+  const response = await fetch(`${base}/responses`, {
+    method: "POST", redirect: "error",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = String(payload.error?.message || payload.message || "接口未提供具体原因").replaceAll(key, "[已隐藏]").slice(0, 220);
+    throw new Error(`HTTP ${response.status}：${detail}`);
+  }
+  const searched = (payload.output || []).some((item) => item.type === "web_search_call");
+  return {
+    supported: searched,
+    message: searched ? "当前模型已成功调用联网搜索，可用于插件。" : "请求成功，但接口没有返回联网搜索调用；当前模型无法确认可用于插件。",
+    inputTokens: Number(payload.usage?.input_tokens) || 0,
+    outputTokens: Number(payload.usage?.output_tokens) || 0,
+  };
+}
+
 const DEFAULT_BASE = "https://maas.qianwenaiapi.com/compatible-mode/v1";
 const DEFAULT_MODEL = "deepseek-v4-flash";
 const DAY = 24 * 60 * 60 * 1000;
@@ -115,10 +148,11 @@ async function searchOne(company) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!["get-public-settings", "search-one", "save-position"].includes(message?.type)) return false;
+  if (!["get-public-settings", "search-one", "save-position", "test-model"].includes(message?.type)) return false;
   (async () => {
     if (message.type === "get-public-settings") return await publicSettings();
     if (message.type === "search-one") return await searchOne(message.company);
+    if (message.type === "test-model") return await testModel(message.config);
     const x = Number(message.position?.x);
     const y = Number(message.position?.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error("悬浮按钮位置无效。");
