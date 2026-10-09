@@ -4,6 +4,36 @@ const DEFAULT_BASE = "https://maas.qianwenaiapi.com/compatible-mode/v1";
 const DEFAULT_MODEL = "deepseek-v4-flash";
 const DAY = 24 * 60 * 60 * 1000;
 
+chrome.action.onClicked.addListener(async () => {
+  const { settingsWindowId } = await chrome.storage.session.get({ settingsWindowId: null });
+  if (Number.isInteger(settingsWindowId)) {
+    try {
+      const existing = await chrome.windows.get(settingsWindowId, { populate: true });
+      if (existing.type === "popup" && existing.tabs?.some((tab) => tab.url === chrome.runtime.getURL("popup.html"))) {
+        await chrome.windows.remove(settingsWindowId);
+        await chrome.storage.session.remove("settingsWindowId");
+        return;
+      }
+    } catch {
+      // The user may have closed the window with its title-bar button.
+    }
+    await chrome.storage.session.remove("settingsWindowId");
+  }
+  const settingsWindow = await chrome.windows.create({
+    url: chrome.runtime.getURL("popup.html"),
+    type: "popup",
+    width: 420,
+    height: 720,
+    focused: true,
+  });
+  if (Number.isInteger(settingsWindow?.id)) await chrome.storage.session.set({ settingsWindowId: settingsWindow.id });
+});
+
+chrome.windows.onRemoved.addListener(async (windowId) => {
+  const { settingsWindowId } = await chrome.storage.session.get({ settingsWindowId: null });
+  if (windowId === settingsWindowId) await chrome.storage.session.remove("settingsWindowId");
+});
+
 async function publicSettings() {
   const saved = await chrome.storage.local.get({ searchScope: "visible", linkPlacement: "company", linkBrowser: "chrome", widgetPosition: null });
   return {

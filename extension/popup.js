@@ -19,6 +19,7 @@ function save(values) {
 }
 
 async function initialize() {
+  $("closeWindow").addEventListener("click", () => window.close());
   try {
     const raw = await chrome.storage.local.get(["providerBase", "modelName", "apiKey", "searchScope", "linkPlacement", "linkBrowser", "draftBase", "draftModel", "draftKey"]);
     const saved = { ...defaults, ...raw };
